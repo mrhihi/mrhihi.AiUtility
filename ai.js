@@ -1,4 +1,4 @@
-#!/Users/huangxiaoren/.nvm/versions/node/v23.8.0/bin/node
+#!/usr/bin/env node
 
 const fs = require('fs');
 const os = require('os');

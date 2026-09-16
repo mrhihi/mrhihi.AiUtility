@@ -33,6 +33,30 @@ npm install
 
 本專案使用內建的 `fetch`，因此建議使用 Node.js 18 以上版本。
 
+## 安裝成全域指令
+
+在專案根目錄執行：
+
+```bash
+npm install -g .
+```
+
+安裝完成後即可在任何目錄使用 `ai`：
+
+```bash
+ai help
+ai env ls
+ai openai ask "請簡單介紹你自己"
+```
+
+若要移除全域指令：
+
+```bash
+npm uninstall -g aiutility
+```
+
+全域安裝只會安裝 CLI 程式本身；環境設定仍放在執行指令時的目前專案目錄中。
+
 ## 建立環境設定
 
 每一組環境設定都是根目錄中的 `<envfile>.env` 檔案，例如 `openai.env`。實際 `.env` 檔案包含敏感資訊，不應提交到 Git。
@@ -48,7 +72,7 @@ cp .env.example openai.env
 ### 方式二：使用 CLI 建立
 
 ```bash
-node ai.js env add openai \
+ai env add openai \
   API_KEY=your-api-key \
   AI_HOST=https://api.openai.com/v1 \
   DEFAULT_MODEL=gpt-4o-mini
@@ -66,7 +90,7 @@ node ai.js env add openai \
 檢查設定時，`env show` 會遮罩 `API_KEY`：
 
 ```bash
-node ai.js env show openai
+ai env show openai
 ```
 
 ## 基本指令
@@ -74,62 +98,62 @@ node ai.js env show openai
 顯示完整說明：
 
 ```bash
-node ai.js help
+ai help
 ```
 
 列出環境設定檔：
 
 ```bash
-node ai.js env ls
+ai env ls
 ```
 
 列出指定服務的模型：
 
 ```bash
-node ai.js openai ls
+ai openai ls
 ```
 
 發送一次性問題：
 
 ```bash
-node ai.js openai ask "請簡單介紹你自己"
+ai openai ask "請簡單介紹你自己"
 ```
 
 指定模型發送一次性問題：
 
 ```bash
-node ai.js openai ask gpt-4o-mini "請摘要這段文字"
+ai openai ask gpt-4o-mini "請摘要這段文字"
 ```
 
 啟動互動式聊天：
 
 ```bash
-node ai.js openai chat
+ai openai chat
 ```
 
 也可以在聊天時指定模型：
 
 ```bash
-node ai.js openai chat gpt-4o-mini
+ai openai chat gpt-4o-mini
 ```
 
 ## 環境設定管理
 
 ```bash
 # 顯示完整設定內容
-node ai.js env cat openai
+ai env cat openai
 
 # 修改既有設定
-node ai.js env set openai DEFAULT_MODEL=gpt-4.1-mini
+ai env set openai DEFAULT_MODEL=gpt-4.1-mini
 
 # 顯示遮罩後的設定
-node ai.js env show openai
+ai env show openai
 
 # 刪除設定檔；執行時會要求確認
-node ai.js env delete openai
+ai env delete openai
 
 # 腳本使用時跳過刪除確認
-node ai.js env delete openai --yes
+ai env delete openai --yes
 ```
 
 ## 互動式聊天指令

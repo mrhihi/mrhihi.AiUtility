@@ -1,4 +1,22 @@
 {
+  "name": "aiutility",
+  "version": "1.0.0",
+  "description": "OpenAI 相容 Chat Completion API 命令列工具",
+  "main": "aiutility.js",
+  "bin": {
+    "ai": "./ai.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "ai.js",
+    "aiutility.js"
+  ],
+  "scripts": {
+    "start": "node ai.js",
+    "help": "node ai.js help"
+  },
   "dependencies": {
     "dotenv": "^16.5.0"
   }
