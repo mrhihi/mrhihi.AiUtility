@@ -207,7 +207,7 @@ function printEnv(name) {
     ENV_KEYS.forEach(key => { if (Object.prototype.hasOwnProperty.call(values, key)) console.log(`${key}=${maskedValue(key, values[key])}`); });
 }
 async function manageEnv(commandArgs) {
-    const action = commandArgs[0] || 'list';
+    const action = commandArgs[0] || 'help';
     if (['help', '--help', '-h'].includes(action)) { console.log(colorizeHelp(ENV_HELP)); return; }
     if (action === 'list' || action === 'ls') {
         fs.readdirSync(__dirname).filter(file => file.endsWith('.env')).sort().forEach(file => console.log(file.replace(/\.env$/, '')));
