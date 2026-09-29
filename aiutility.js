@@ -13,6 +13,8 @@ class AIUtility {
         this.apiKey = apiKey;
         this.url = url;
         this.apiVersion = apiVersion;
+        // 記錄各模型不支援的參數 (例如 o 系列 / gpt-5 需要 max_completion_tokens、不接受 temperature)
+        this.modelQuirks = new Map();
     }
 
     /**
@@ -37,13 +39,7 @@ class AIUtility {
      * @returns {Promise<Object>} 完整的 Chat Completion 回應
      */
     async callChatCompletionStream(model, messages, onDelta = () => {}, temperature = 0.7, maxTokens = 8192, signal = null) {
-        const url = this.#chatUrl();
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: this.#headers(),
-            ...(signal ? { signal } : {}),
-            body: JSON.stringify({ model, messages, temperature, max_tokens: maxTokens, stream: true }),
-        });
+        const response = await this.#postChat(model, messages, temperature, maxTokens, true, signal);
 
         if (!response.ok) {
             const error = await this.#responseError(response);
@@ -97,6 +93,45 @@ class AIUtility {
         return { choices: [{ message: { role: 'assistant', content } }] };
     }
 
+    #chatBody(model, messages, temperature, maxTokens, stream) {
+        const quirks = this.modelQuirks.get(model) || {};
+        const body = { model, messages };
+        if (!quirks.noTemperature) body.temperature = temperature;
+        body[quirks.maxCompletionTokens ? 'max_completion_tokens' : 'max_tokens'] = maxTokens;
+        if (stream) body.stream = true;
+        return body;
+    }
+
+    /**
+     * 送出 Chat Completion 請求；若伺服器回報參數不支援，調整後重試並記住該模型的差異。
+     */
+    async #postChat(model, messages, temperature, maxTokens, stream, signal) {
+        for (let attempt = 0; ; attempt++) {
+            const response = await fetch(this.#chatUrl(), {
+                method: 'POST',
+                headers: this.#headers(),
+                ...(signal ? { signal } : {}),
+                body: JSON.stringify(this.#chatBody(model, messages, temperature, maxTokens, stream)),
+            });
+            if (response.status !== 400 || attempt >= 2) return response;
+
+            let err;
+            try { err = (await response.clone().json())?.error; } catch { return response; }
+            const quirks = { ...(this.modelQuirks.get(model) || {}) };
+            const text = `${err?.message || ''}`;
+            if (err?.param === 'max_tokens' || /max_completion_tokens/.test(text)) {
+                if (quirks.maxCompletionTokens) return response;
+                quirks.maxCompletionTokens = true;
+            } else if (err?.param === 'temperature') {
+                if (quirks.noTemperature) return response;
+                quirks.noTemperature = true;
+            } else {
+                return response;
+            }
+            this.modelQuirks.set(model, quirks);
+        }
+    }
+
     #chatUrl() {
         const aoaiApiVer = this.apiVersion ? `?api-version=${encodeURIComponent(this.apiVersion)}` : '';
         return `${this.url}/chat/completions${aoaiApiVer}`;
@@ -110,12 +145,7 @@ class AIUtility {
     }
 
     async #requestChatCompletion(model, messages, temperature, maxTokens, stream = false, quiet = false, signal = null) {
-        const response = await fetch(this.#chatUrl(), {
-            method: 'POST',
-            headers: this.#headers(),
-            ...(signal ? { signal } : {}),
-            body: JSON.stringify({ model, messages, temperature, max_tokens: maxTokens, ...(stream ? { stream: true } : {}) }),
-        });
+        const response = await this.#postChat(model, messages, temperature, maxTokens, stream, signal);
         if (!response.ok) throw await this.#responseError(response, quiet);
         return response.json();
     }
