@@ -69,6 +69,7 @@ const HELP = `使用方式：
   ai env set <envfile> KEY=VALUE [...]
   ai env delete <envfile> [--yes]
   ai code
+  ai tui [envfile] [model]
   ai <envfile> ls
   ai <envfile> ask [model] "訊息"
   ai <envfile> chat [model]
@@ -84,6 +85,7 @@ const HELP = `使用方式：
   ls                 列出環境設定檔，或列出 API 模型
   cat <envfile>      顯示環境設定檔內容
   code               在 VS Code 開啟 AiUtility 目錄
+  tui                全螢幕 AI 指令助手；envfile 省略時用 .env 的 AI_DEFAULT_ENV（zsh 熱鍵見 ai.zsh）
   ask                發送一次性問題，優先使用 streaming 回覆
   chat               啟動互動式聊天並保存 session
 
@@ -122,7 +124,9 @@ env 管理：
   ai gssdev ask "你好嗎？"
   ai gssdev ask phi-4-q4 "請摘要這段文字"
   ai gssdev chat
-  ai gssdev chat phi-4-q4`;
+  ai gssdev chat phi-4-q4
+  ai tui
+  ai tui gssdev phi-4-q4`;
 
 const SESSION_DIR = path.join(os.homedir(), '.aiutility', 'sessions');
 const SYSTEM_MESSAGE = { role: 'system', content: '用正體中文台灣用語回答' };
@@ -165,6 +169,26 @@ const ENV_HELP = `env 管理使用方式：
   ai env set gssdev DEFAULT_MODEL=gpt-4.1-mini
   ai env show gssdev`;
 
+function defaultEnvName() {
+    const file = path.join(__dirname, '.env');
+    if (!fs.existsSync(file)) return null;
+    return require('dotenv').parse(fs.readFileSync(file)).AI_DEFAULT_ENV || null;
+}
+const NON_ENV_FILES = ['.env', 'example.env'];
+function listEnvNames() { return fs.readdirSync(__dirname).filter(file => file.endsWith('.env') && !NON_ENV_FILES.includes(file)).map(file => file.replace(/\.env$/, '')).sort(); }
+async function runTuiCommand(commandArgs) {
+    const envfile = commandArgs[0] || defaultEnvName();
+    if (!envfile) {
+        throw new Error(`未指定 envfile，且 ${path.join(__dirname, '.env')} 沒有設定 AI_DEFAULT_ENV（例如 AI_DEFAULT_ENV=gssdev）。\n可用的環境：${listEnvNames().join(', ') || '（無）'}`);
+    }
+    validateEnvName(envfile);
+    if (!fs.existsSync(envPath(envfile))) throw new Error(`環境變數檔案 ${envPath(envfile)} 不存在。\n可用的環境：${listEnvNames().join(', ') || '（無）'}`);
+    require('dotenv').config({ path: envPath(envfile) });
+    const model = commandArgs[1] || process.env.DEFAULT_MODEL;
+    if (!model) throw new Error('請提供模型名稱，或在 envfile 設定 DEFAULT_MODEL。');
+    const ai = new AIUtility(process.env.API_KEY, process.env.AI_HOST, process.env.API_VERSION || '');
+    return require('./tui').runTui({ ai, envfile, model });
+}
 function envPath(name) { return path.join(__dirname, `${name}.env`); }
 function printHelp() { console.log(colorizeHelp(HELP)); }
 function validateEnvName(name) {
@@ -210,7 +234,7 @@ async function manageEnv(commandArgs) {
     const action = commandArgs[0] || 'help';
     if (['help', '--help', '-h'].includes(action)) { console.log(colorizeHelp(ENV_HELP)); return; }
     if (action === 'list' || action === 'ls') {
-        fs.readdirSync(__dirname).filter(file => file.endsWith('.env')).sort().forEach(file => console.log(file.replace(/\.env$/, '')));
+        listEnvNames().forEach(name => console.log(name));
         return;
     }
     const name = commandArgs[1];
@@ -552,6 +576,8 @@ async function main() {
     if (!args.length || ['help', '--help', '-h'].includes(args[0])) { printHelp(); return; }
     if (args[0] === 'env') { return manageEnv(args.slice(1)); }
     if (args[0] === 'code') { exec('code .', { cwd: __dirname }, error => { if (error) console.error(`無法打開 VS Code: ${error.message}`); }); return; }
+
+    if (args[0] === 'tui') return runTuiCommand(args.slice(1));
 
     const envfile = args[0];
     const file = envPath(envfile);

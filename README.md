@@ -64,7 +64,7 @@ npm uninstall -g aiutility
 ### 方式一：複製範例檔
 
 ```bash
-cp .env.example openai.env
+cp example.env openai.env
 ```
 
 接著編輯 `openai.env`，填入實際的 `API_KEY`、API 位址及模型名稱。
@@ -173,6 +173,34 @@ ai env delete openai --yes
 - `Ctrl-D` 或 `Ctrl-C`：離開互動模式
 
 聊天 session 會保存於使用者家目錄的 `~/.aiutility/sessions`，不會寫入本專案目錄。
+
+## zsh 熱鍵：AI 指令助手（TUI）
+
+在命令列忘記指令時，按 `Ctrl+G` 再按 `#` 開啟全螢幕 AI 對話；離開後畫面與輸入到一半的指令都會還原，可繼續工作。
+
+設定：
+
+```bash
+# 1. 在 AiUtility 目錄建立 .env，指定預設的環境設定檔（例如 gssdev.env）
+echo 'AI_DEFAULT_ENV=gssdev' > .env
+
+# 2. 在 ~/.zshrc 加入（需先 npm install -g . 讓 ai 在 PATH 中）
+source /path/to/AiUtility/ai.zsh
+```
+
+也可直接執行 `ai tui [envfile] [model]`；省略 `envfile` 時使用 `.env` 的 `AI_DEFAULT_ENV`，省略 `model` 時使用該環境的 `DEFAULT_MODEL`。
+
+TUI 內的操作（最下一排會常駐顯示精簡說明，`/help` 顯示完整說明）：
+
+- `Enter` 送出；`Shift+Enter`、`Alt+Enter` 或 `Ctrl+J` 換行
+- 輸入框多行時，`↑` / `↓` 在行之間移動游標，方便回到上一行修改；捲動對話用 `PgUp` / `PgDn`（Mac：`Fn+↑` / `Fn+↓`）、`Ctrl+B` / `Ctrl+F`，或 `Shift+↑` / `Shift+↓`
+- 多輪對話，預設每輪都帶前面的內容；`/context on|off` 開關（off 時只送當前訊息，歷史仍保留）
+- 每輪有編號：`/copy [in|out|code] [n]` 複製第 n 輪（預設最後一輪）的輸入、輸出或第一個程式碼區塊；`Ctrl+Y` 複製最後一則 AI 回覆
+- `/model [名稱]` 查看或切換模型、`/clear` 清空、`/exit`、`Esc`（輸入為空時）或 `Ctrl+D` 離開；回覆中 `Esc` / `Ctrl+C` 中斷
+- 複製使用 `pbcopy`（macOS），其他環境依序嘗試 `wl-copy`、`xclip`、`xsel`，最後以 OSC 52 寫入終端剪貼簿
+- 此模式不保存 session
+
+注意：`^G` 原本是 zsh 的 `send-break`，改成前綴鍵後，單獨按 `Ctrl+G` 會等待 `KEYTIMEOUT`（預設 0.4 秒）。
 
 ## 安全注意事項
 
