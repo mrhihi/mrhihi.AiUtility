@@ -176,7 +176,7 @@ ai env delete openai --yes
 
 ## zsh 熱鍵：AI 指令助手（TUI）
 
-在命令列忘記指令時，按 `Ctrl+G` 再按 `#` 開啟全螢幕 AI 對話；離開後畫面與輸入到一半的指令都會還原，可繼續工作。
+在命令列忘記指令時，按 `Ctrl+G` 再按 `Ctrl+A`（或 `a`）開啟全螢幕 AI 對話；離開後畫面與輸入到一半的指令都會還原，可繼續工作。
 
 設定：
 
@@ -200,7 +200,7 @@ TUI 內的操作（最下一排會常駐顯示精簡說明，`/help` 顯示完�
 - 複製使用 `pbcopy`（macOS），其他環境依序嘗試 `wl-copy`、`xclip`、`xsel`，最後以 OSC 52 寫入終端剪貼簿
 - 此模式不保存 session
 
-注意：`^G` 原本是 zsh 的 `send-break`，改成前綴鍵後，單獨按 `Ctrl+G` 會等待 `KEYTIMEOUT`（預設 0.4 秒）。
+注意：`^G` 原本是 zsh 的 `send-break`，作為前綴鍵後，單獨按 `Ctrl+G` 會等待 `KEYTIMEOUT`（預設 0.4 秒）。與 fzf-git.sh 共用 `Ctrl+G` 前綴，`a` 未被其佔用；想換鍵可修改 `ai.zsh` 最後兩行 `bindkey`。
 
 ## 安全注意事項
 
